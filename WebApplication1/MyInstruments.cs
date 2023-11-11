@@ -5,7 +5,8 @@ namespace WebApplication1;
 
 public class MyInstruments : IDisposable
 {
-    internal const string MyInstrumentsSourceName = "OtelUsing.AspNetCore";
+    public const string InstrumentsSourceName = "WeaterInstruments";
+    public const string ApplicationName = "OtelUsing.AspNetCore";
     private readonly Meter _meter;
     private int _todayTemperature;
     private string _todaySummary = string.Empty;
@@ -16,10 +17,10 @@ public class MyInstruments : IDisposable
 
     public MyInstruments()
     {
-        _meter = new Meter(MyInstrumentsSourceName);
+        _meter = new Meter(InstrumentsSourceName);
         RequestsCounter = _meter.CreateCounter<int>("web-requests", "requests", "The number of requests to the API");
         _meter.CreateObservableGauge("today-temperature", GetTemperature, "Celsius", "The temperature today");
-        ActivitySource = new(MyInstrumentsSourceName);
+        ActivitySource = new(InstrumentsSourceName);
     }
 
     public void SetTodayTemperature(int temperature, string summary)
