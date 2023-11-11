@@ -1,5 +1,5 @@
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using LokiLoggingProvider.Options;
-using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -16,12 +16,23 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<MyInstruments>();
 
-//AddOtelV1(builder.Services);
-AddOtelV2(builder.Services);
+if(args.Length == 0)
+    throw new ArgumentException("Specify the solution number as the first argument");
+
+Console.WriteLine($"Solution number: {args[0]}");
+if (args[0] == "1")
+    AddOtelV1(builder.Services);
+else if (args[0] == "2")
+    AddOtelV2(builder.Services);
+else if (args[0] == "3")
+    AddAzureMonitor(builder.Services);
+else
+    throw new ArgumentException("Invalid solution number as the first argument");
 
 var app = builder.Build();
 
-//app.UseOpenTelemetryPrometheusScrapingEndpoint(); // add OpenTelemetry.Exporter.Prometheus.AspNetCore nuget package
+if (args[0] == "1")
+    app.UseOpenTelemetryPrometheusScrapingEndpoint(); // add OpenTelemetry.Exporter.Prometheus.AspNetCore nuget package
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -46,10 +57,15 @@ static void AddOtelV1(IServiceCollection serviceCollection) =>
                     configure.Client = PushClient.Grpc; //port 9095
                     configure.Formatter = Formatter.Json;
                     configure.StaticLabels.JobName = MyInstruments.ApplicationName;
-                    configure.StaticLabels.AdditionalStaticLabels.Add("SystemName", "MySystem");
+                    configure.StaticLabels.AdditionalStaticLabels.Add("SystemName", MyInstruments.GlobalSystemName);
                 }))
         .AddOpenTelemetry() // add the OpenTelemetry.Extensions.Hosting nuget package
-        .ConfigureResource(resourceBuilder => resourceBuilder.AddService(MyInstruments.ApplicationName))
+        .ConfigureResource(resourceBuilder => resourceBuilder
+            .AddService(MyInstruments.ApplicationName)
+            .AddAttributes(new Dictionary<string, object>
+            {
+                ["SystemName"] = MyInstruments.GlobalSystemName
+            }))
         .WithTracing(tracerProviderBuilder => tracerProviderBuilder
                 .AddSource(MyInstruments.InstrumentsSourceName)
                 .AddAspNetCoreInstrumentation( // add the pre-release OpenTelemetry.Instrumentation.AspNetCore nuget package
@@ -85,7 +101,7 @@ static void AddOtelV2(IServiceCollection services) => services
                 .AddService(MyInstruments.ApplicationName)
                 .AddAttributes(new Dictionary<string, object>
                 {
-                    ["SystemName"] = "MySystem", // see .\dependencies\config\otel-collector\config.yaml how to add 'SystemName' as a resource label
+                    ["SystemName"] = MyInstruments.GlobalSystemName, // see .\dependencies\config\otel-collector\config.yaml how to add 'SystemName' as a resource label
                 });
             loggerOptions.SetResourceBuilder(resBuilder);
             loggerOptions.IncludeFormattedMessage = true;
@@ -99,7 +115,7 @@ static void AddOtelV2(IServiceCollection services) => services
         .AddService(MyInstruments.ApplicationName)
         .AddAttributes(new Dictionary<string, object>
         {
-            ["SystemName"] = "MySystem", // see .\dependencies\config\otel-collector\config.yaml how to add 'SystemName' as a resource label
+            ["SystemName"] = MyInstruments.GlobalSystemName
         }))
     .WithTracing(tracerProviderBuilder =>
             tracerProviderBuilder.AddSource(MyInstruments.InstrumentsSourceName)
@@ -127,20 +143,35 @@ static void AddOtelV2(IServiceCollection services) => services
             .AddOtlpExporter() // port 4317 // add the OpenTelemetry.Exporter.OpenTelemetryProtocol nuget package
     );
 
-internal class ExceptionLogProcessor : BaseProcessor<LogRecord>
-{
-    public override void OnEnd(LogRecord data)
-    {
-        if (data.Exception is null) return;
-
-        if (data.Attributes != null && data.Attributes.Any(x => x.Key == "exception.type")) return;
-
-        var attributes = new List<KeyValuePair<string, object?>>();
-        if (data.Attributes != null)
-            attributes.AddRange(data.Attributes);
-        attributes.Add(new("exception.type", data.Exception.GetType().Name));
-        attributes.Add(new("exception.message", data.Exception.Message));
-        attributes.Add(new("exception.stacktrace", data.Exception.StackTrace));
-        data.Attributes = attributes;
-    }
-}
+static void AddAzureMonitor(IServiceCollection services) => services
+    .AddOpenTelemetry()
+    .UseAzureMonitor() // Add Azure.Monitor.OpenTelemetry.AspNetCore nuget package
+    .ConfigureResource(resourceBuilder => resourceBuilder
+        .AddService(MyInstruments.ApplicationName)
+        .AddAttributes(new Dictionary<string, object>
+        {
+            ["SystemName"] = MyInstruments.GlobalSystemName
+        }))
+    .WithTracing(tracerProviderBuilder =>
+            tracerProviderBuilder.AddSource(MyInstruments.InstrumentsSourceName)
+                .AddAspNetCoreInstrumentation( // add the pre-release OpenTelemetry.Instrumentation.AspNetCore nuget package
+                    options =>
+                    {
+                        options.RecordException = true;
+                        options.Filter = httpContext =>
+                        {
+                            var pathValue = httpContext.Request.Path.Value;
+                            return pathValue is null
+                                   || (pathValue != "/metrics" && !pathValue.StartsWith("/swagger") &&
+                                       !pathValue.StartsWith("/_vs") && !pathValue.StartsWith("/_framework"));
+                        };
+                    })
+                .AddHttpClientInstrumentation()
+    )
+    .WithMetrics(m => m
+            .AddMeter(MyInstruments.InstrumentsSourceName)
+            .AddAspNetCoreInstrumentation() // Add OpenTelemetry.Instrumentation.AspNetCore nuget package
+            .AddHttpClientInstrumentation() // Add OpenTelemetry.Instrumentation.Http nuget package
+            .AddRuntimeInstrumentation() // Add OpenTelemetry.Instrumentation.Runtime nuget package
+            .AddProcessInstrumentation() // Add OpenTelemetry.Instrumentation.Process nuget package
+    );

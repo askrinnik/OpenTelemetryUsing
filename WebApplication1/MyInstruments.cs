@@ -5,8 +5,9 @@ namespace WebApplication1;
 
 public class MyInstruments : IDisposable
 {
-    public const string InstrumentsSourceName = "WeaterInstruments";
+    public const string GlobalSystemName = "MySystem";
     public const string ApplicationName = "OtelUsing.AspNetCore";
+    public const string InstrumentsSourceName = "WeaterInstruments";
     private readonly Meter _meter;
     private int _todayTemperature;
     private string _todaySummary = string.Empty;
@@ -35,6 +36,7 @@ public class MyInstruments : IDisposable
     public void Dispose()
     {
         _meter.Dispose();
+        ActivitySource.Dispose();
         GC.SuppressFinalize(this);
     }
 }

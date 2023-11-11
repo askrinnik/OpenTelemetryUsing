@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "iisSettings": {
     "windowsAuthentication": false,
@@ -9,15 +9,38 @@
     }
   },
   "profiles": {
-    "http": {
+    "OTEL1": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
+      "commandLineArgs": "1",
       "launchBrowser": true,
       "launchUrl": "swagger",
-      "applicationUrl": "http://localhost:9184",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:9184"
+    },
+    "OTEL2": {
+      "commandName": "Project",
+      "commandLineArgs": "2",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:9184"
+    },
+    "OTEL3": {
+      "commandName": "Project",
+      "commandLineArgs": "3",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:9184"
     },
     "IIS Express": {
       "commandName": "IISExpress",
@@ -26,6 +49,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    }
     }
   }
 }
