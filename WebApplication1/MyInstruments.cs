@@ -18,10 +18,10 @@ public class MyInstruments : IDisposable
 
     public MyInstruments()
     {
-        _meter = new Meter(InstrumentsSourceName);
+        ActivitySource = new(InstrumentsSourceName);
+        _meter = new(InstrumentsSourceName);
         RequestsCounter = _meter.CreateCounter<int>("web-requests", "requests", "The number of requests to the API");
         _meter.CreateObservableGauge("today-temperature", GetTemperature, "Celsius", "The temperature today");
-        ActivitySource = new(InstrumentsSourceName);
     }
 
     public void SetTodayTemperature(int temperature, string summary)
