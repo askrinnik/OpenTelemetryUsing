@@ -24,3 +24,6 @@ Three architectural solutions are used:
 ![sss](https://swimburger.net/media/bbehaje5/application-insights-square-logo.png?width=250&height=250&v=1d6bcf77b0557a0)
 
 The solution was based on [an article](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-with-otel).
+
+
+Video record:h ttps://youtu.be/GXtUC_5pgco (rus)
