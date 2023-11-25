@@ -47,10 +47,10 @@ app.MapControllers();
 
 app.Run();
 
-static void AddOtelV1(IServiceCollection serviceCollection) =>
-    serviceCollection
-        .AddLogging(logBuilder =>
-            logBuilder
+static void AddOtelV1(IServiceCollection services) =>
+    services
+        .AddLogging(loggingBuilder =>
+            loggingBuilder
                 .AddConsole()
                 .AddLoki(configure =>
                 {
@@ -93,7 +93,6 @@ static void AddOtelV1(IServiceCollection serviceCollection) =>
 static void AddOtelV2(IServiceCollection services) => services
     .AddLogging(loggingBuilder =>
     {
-        loggingBuilder.ClearProviders();
         loggingBuilder.AddConsole();
         loggingBuilder.AddOpenTelemetry(loggerOptions =>
         {
@@ -107,7 +106,7 @@ static void AddOtelV2(IServiceCollection services) => services
             loggerOptions.IncludeFormattedMessage = true;
             loggerOptions.IncludeScopes = true;
             loggerOptions.AddProcessor(new ExceptionLogProcessor());
-            loggerOptions.AddOtlpExporter();
+            loggerOptions.AddOtlpExporter(); // 4317
         });
     })
     .AddOpenTelemetry()
@@ -115,7 +114,7 @@ static void AddOtelV2(IServiceCollection services) => services
         .AddService(MyInstruments.ApplicationName)
         .AddAttributes(new Dictionary<string, object>
         {
-            ["SystemName"] = MyInstruments.GlobalSystemName
+            ["SystemName"] = MyInstruments.GlobalSystemName // That attribute is visible in the target_info separate metric.
         }))
     .WithTracing(tracerProviderBuilder =>
             tracerProviderBuilder.AddSource(MyInstruments.InstrumentsSourceName)
