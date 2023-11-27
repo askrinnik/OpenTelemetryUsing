@@ -1,5 +1,6 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using LokiLoggingProvider.Options;
+using Microsoft.Extensions.Logging.Console;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -93,11 +94,18 @@ static void AddOtelV1(IServiceCollection services) =>
 static void AddOtelV2(IServiceCollection services) => services
     .AddLogging(loggingBuilder =>
     {
-        loggingBuilder.AddConsole();
+        loggingBuilder.ClearProviders();
+
+        loggingBuilder.AddSimpleConsole(conf =>
+        {
+            conf.ColorBehavior = LoggerColorBehavior.Enabled;
+            conf.SingleLine = true;
+            conf.TimestampFormat = "HH:mm:ss ";
+        });
         loggingBuilder.AddOpenTelemetry(loggerOptions =>
         {
             var resBuilder = ResourceBuilder.CreateDefault()
-                .AddService(MyInstruments.ApplicationName)
+                .AddService(MyInstruments.ApplicationName, serviceInstanceId: Environment.MachineName)
                 .AddAttributes(new Dictionary<string, object>
                 {
                     ["SystemName"] = MyInstruments.GlobalSystemName, // see .\dependencies\config\otel-collector\config.yaml how to add 'SystemName' as a resource label
@@ -111,7 +119,7 @@ static void AddOtelV2(IServiceCollection services) => services
     })
     .AddOpenTelemetry()
     .ConfigureResource(resourceBuilder => resourceBuilder
-        .AddService(MyInstruments.ApplicationName)
+        .AddService(MyInstruments.ApplicationName, serviceInstanceId:Environment.MachineName)
         .AddAttributes(new Dictionary<string, object>
         {
             ["SystemName"] = MyInstruments.GlobalSystemName // That attribute is visible in the target_info separate metric.
