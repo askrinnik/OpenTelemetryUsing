@@ -21,7 +21,7 @@ processors:
     attributes:
       - action: insert
         key: loki.resource.labels
-        value: SystemName
+        value: EnvironmentName
 
 extensions:
   health_check:

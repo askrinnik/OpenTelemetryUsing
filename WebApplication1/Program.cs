@@ -58,14 +58,14 @@ static void AddOtelV1(IServiceCollection services) =>
                     configure.Client = PushClient.Grpc; //port 9095
                     configure.Formatter = Formatter.Json;
                     configure.StaticLabels.JobName = MyInstruments.ApplicationName;
-                    configure.StaticLabels.AdditionalStaticLabels.Add("SystemName", MyInstruments.GlobalSystemName);
+                    configure.StaticLabels.AdditionalStaticLabels.Add("EnvironmentName", MyInstruments.GlobalSystemName);
                 }))
         .AddOpenTelemetry() // add the OpenTelemetry.Extensions.Hosting nuget package
         .ConfigureResource(resourceBuilder => resourceBuilder
             .AddService(MyInstruments.ApplicationName)
             .AddAttributes(new Dictionary<string, object>
             {
-                ["SystemName"] = MyInstruments.GlobalSystemName
+                ["EnvironmentName"] = MyInstruments.GlobalSystemName
             }))
         .WithTracing(tracerProviderBuilder => tracerProviderBuilder
                 .AddSource(MyInstruments.InstrumentsSourceName)
@@ -108,7 +108,7 @@ static void AddOtelV2(IServiceCollection services) => services
                 .AddService(MyInstruments.ApplicationName, serviceInstanceId: Environment.MachineName)
                 .AddAttributes(new Dictionary<string, object>
                 {
-                    ["SystemName"] = MyInstruments.GlobalSystemName, // see .\dependencies\config\otel-collector\config.yaml how to add 'SystemName' as a resource label
+                    ["EnvironmentName"] = MyInstruments.GlobalSystemName, // see .\dependencies\config\otel-collector\config.yaml how to add 'SystemName' as a resource label
                 });
             loggerOptions.SetResourceBuilder(resBuilder);
             loggerOptions.IncludeFormattedMessage = true;
@@ -122,7 +122,7 @@ static void AddOtelV2(IServiceCollection services) => services
         .AddService(MyInstruments.ApplicationName, serviceInstanceId:Environment.MachineName)
         .AddAttributes(new Dictionary<string, object>
         {
-            ["SystemName"] = MyInstruments.GlobalSystemName // That attribute is visible in the target_info separate metric.
+            ["EnvironmentName"] = MyInstruments.GlobalSystemName // That attribute is visible in the target_info separate metric.
         }))
     .WithTracing(tracerProviderBuilder =>
             tracerProviderBuilder.AddSource(MyInstruments.InstrumentsSourceName)

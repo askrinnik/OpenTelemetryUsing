@@ -10,7 +10,7 @@ services:
     # The service below recursively changes the user ownership of the tempo-data volume's directories to the 1000 user. 
     # It is required for correct work of the Grafana Tempo. The command should be started once. Then the service can be deleted.
     volume-permissions:
-        image: ubuntu:latest
+        image: ubuntu:23.10
         tty: true
         stdin_open: true
         user: "root"
@@ -18,7 +18,7 @@ services:
         volumes:
             - "tempo:/mnt/tempo-data"
     loki:
-        image: "grafana/loki:latest"
+        image: "grafana/loki:2.9.2"
         hostname: loki
         command: -config.file=/etc/loki/local-config.yaml
         volumes:
@@ -27,7 +27,7 @@ services:
             # - "3100:3100" # http and Grafana data source
             - "9095:9095" # grpc
     tempo:
-        image: grafana/tempo:latest
+        image: grafana/tempo:2.3.0
         hostname: tempo
         user: "1000"
         restart: "unless-stopped"
@@ -41,7 +41,7 @@ services:
         depends_on:
             - volume-permissions
     prometheus:
-        image: prom/prometheus:latest
+        image: prom/prometheus:v2.48.0
         hostname: prometheus
         volumes:
             - ./config/prometheus/:/etc/prometheus/
@@ -52,7 +52,7 @@ services:
         ports:
             - 9090:9090 #UI and for Grafana data source
     grafana:
-        image: grafana/grafana-oss:latest-ubuntu
+        image: grafana/grafana-oss:10.2.2
         hostname: grafana
         ports: 
             - "3000:3000" #UI
